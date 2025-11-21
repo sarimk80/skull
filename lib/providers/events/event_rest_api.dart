@@ -12,7 +12,9 @@ abstract class EventRestApi {
   @GET('/events')
   Future<List<EventsModel>> getAllEvents(
     @Query('page') int page,
-    @Query('limit') int limit
+    @Query('limit') int limit,
+    @Query('sortBy') String sortBy,
+    @Query('order') String order,
   );
 
   @POST('/events')

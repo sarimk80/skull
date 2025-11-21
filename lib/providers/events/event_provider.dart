@@ -8,8 +8,8 @@ class EventProvider {
     _eventRestApi = api;
   }
 
-  Future<List<EventsModel>> getAllEvents(int page,int limit) {
-    return _eventRestApi.getAllEvents(page,limit);
+  Future<List<EventsModel>> getAllEvents(int page,int limit,String sortBy,String order) {
+    return _eventRestApi.getAllEvents(page,limit,sortBy,order);
   }
 
   Future<EventsModel> getEventDetail(String id) {

@@ -5,7 +5,7 @@ part 'event_model.g.dart';
 @JsonSerializable()
 class EventsModel {
   @JsonKey(name: "createdAt", includeIfNull: false)
-  final String? createdAt; //":"2025-11-18T18:13:55.473Z",
+  final int? createdAt; //":"2025-11-18T18:13:55.473Z",
   @JsonKey(name: "name", includeIfNull: false)
   final String? name; //":"Frankie Hamill",
   @JsonKey(name: "avatar", includeIfNull: false)

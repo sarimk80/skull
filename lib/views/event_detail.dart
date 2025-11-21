@@ -571,22 +571,22 @@ class _EventDetailState extends State<EventDetail> {
     );
   }
 
-  String _formatEventDate(String? dateString) {
-    if (dateString == null) return 'Date not specified';
+  String _formatEventDate(int? timeStamp) {
+    if (timeStamp == null) return 'Date not specified';
 
     try {
-      final date = DateTime.parse(dateString);
+      final date = DateTime.fromMicrosecondsSinceEpoch(timeStamp);
       return '${_getWeekday(date)}, ${date.day} ${_getMonth(date)} ${date.year}';
     } catch (e) {
       return 'Invalid Date';
     }
   }
 
-  String _formatEventTime(String? dateString) {
-    if (dateString == null) return 'Time not specified';
+  String _formatEventTime(int? timeStamp) {
+    if (timeStamp == null) return 'Time not specified';
 
     try {
-      final date = DateTime.parse(dateString);
+      final date = DateTime.fromMicrosecondsSinceEpoch(timeStamp);
       return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
     } catch (e) {
       return 'Invalid Time';

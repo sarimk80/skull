@@ -22,9 +22,19 @@ class _EventRestApi implements EventRestApi {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<List<EventsModel>> getAllEvents(int page, int limit) async {
+  Future<List<EventsModel>> getAllEvents(
+    int page,
+    int limit,
+    String sortBy,
+    String order,
+  ) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'page': page, r'limit': limit};
+    final queryParameters = <String, dynamic>{
+      r'page': page,
+      r'limit': limit,
+      r'sortBy': sortBy,
+      r'order': order,
+    };
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<List<EventsModel>>(

@@ -13,7 +13,12 @@ class EventCubitCubit extends Cubit<EventCubitState> {
   void getAllEvents() async {
     try {
       emit(EventListLoading());
-      List<EventsModel> eventModels = await eventProvider.getAllEvents(1,10);
+      List<EventsModel> eventModels = await eventProvider.getAllEvents(
+        1,
+        10,
+        'createdAt',
+        ''
+      );
       emit(EventListLoaded(eventModels: eventModels));
     } catch (e) {
       emit(EventListError(errorMessage: e.toString()));

@@ -407,8 +407,8 @@ class _EventHomeState extends State<EventHome> {
     );
   }
 
-  Widget _buildEventDate(String? createdAt) {
-    if (createdAt == null || createdAt.isEmpty) {
+  Widget _buildEventDate(int? createdAt) {
+    if (createdAt == null) {
       return Container();
     }
 

@@ -29,9 +29,9 @@ class Routes {
   }
 }
 
-String formatDate(String dateString) {
+String formatDate(int dateString) {
   try {
-    final date = DateTime.parse(dateString);
+    final date = DateTime.fromMicrosecondsSinceEpoch(dateString);
     return '${date.day}/${date.month}/${date.year}';
   } catch (e) {
     return 'Invalid Date';

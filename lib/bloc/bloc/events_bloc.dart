@@ -37,11 +37,24 @@ class EventsBloc extends Bloc<EventsEvent, EventsState> {
       List<EventsModel> eventModels = await eventProvider.getAllEvents(
         event.page,
         event.limit,
+        'createdAt',
+        'asc',
       );
 
       if (eventModels.isEmpty) {
         return emit(state.copyWith(hasReachedMax: true));
       }
+      // Sort events by createdAt in descending order (newest first)
+      // eventModels.sort((a, b) {
+      //   final dateA = DateTime.tryParse(a.createdAt ?? '');
+      //   final dateB = DateTime.tryParse(b.createdAt ?? '');
+
+      //   if (dateA == null && dateB == null) return 0;
+      //   if (dateA == null) return 1; // Put null dates at the end
+      //   if (dateB == null) return -1; // Put null dates at the end
+
+      //   return dateB.compareTo(dateA); // Descending order (newest first)
+      // });
 
       emit(
         state.copyWith(
@@ -90,7 +103,8 @@ class EventsBloc extends Bloc<EventsEvent, EventsState> {
         event.eventsModel,
       );
       List<EventsModel> listOfEvents = state.eventModelsList ?? [];
-      listOfEvents.add(eventsModel);
+      //listOfEvents.add(eventsModel);
+      listOfEvents.insert(0, eventsModel);
       emit(
         state.copyWith(
           eventModelsList: listOfEvents,

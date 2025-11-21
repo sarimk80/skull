@@ -54,9 +54,11 @@ class _AddEventViewState extends State<AddEventView> {
       eventbloc.add(
         AddEvent(
           eventsModel: EventsModel(
-            createdAt: DateTime.now().toIso8601String(),
+            createdAt: DateTime.now().millisecondsSinceEpoch,
             name: nameController.text,
-            avatar: imagePath,
+            avatar: imagePath.isEmpty
+                ? 'https://picsum.photos/seed/49KBL/3096/3809?blur=9'
+                : imagePath,
             description: descriptionController.text,
             id: uuid.v1(),
           ),
@@ -194,7 +196,7 @@ class _AddEventViewState extends State<AddEventView> {
           ),
         ),
         const SizedBox(height: 12),
-        
+
         if (imagePath.isEmpty)
           // Image Upload Card
           GestureDetector(
@@ -203,7 +205,9 @@ class _AddEventViewState extends State<AddEventView> {
               width: double.infinity,
               height: 140,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                color: Theme.of(
+                  context,
+                ).colorScheme.surfaceVariant.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
@@ -218,7 +222,9 @@ class _AddEventViewState extends State<AddEventView> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -241,7 +247,9 @@ class _AddEventViewState extends State<AddEventView> {
                     'Tap to select from gallery',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                 ],
@@ -272,7 +280,11 @@ class _AddEventViewState extends State<AddEventView> {
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: _removeImage,
                   ),
                 ),
@@ -281,7 +293,10 @@ class _AddEventViewState extends State<AddEventView> {
                 bottom: 8,
                 left: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.6),
                     borderRadius: BorderRadius.circular(8),
@@ -332,7 +347,9 @@ class _AddEventViewState extends State<AddEventView> {
             prefixIcon: const Icon(Icons.title_rounded),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
-            fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+            fillColor: Theme.of(
+              context,
+            ).colorScheme.surfaceVariant.withOpacity(0.3),
           ),
           style: const TextStyle(fontSize: 16),
           textInputAction: TextInputAction.next,
@@ -371,7 +388,9 @@ class _AddEventViewState extends State<AddEventView> {
             prefixIcon: const Icon(Icons.description_rounded),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
-            fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+            fillColor: Theme.of(
+              context,
+            ).colorScheme.surfaceVariant.withOpacity(0.3),
           ),
           maxLines: 5,
           style: const TextStyle(fontSize: 16),
@@ -431,10 +450,7 @@ class _AddEventViewState extends State<AddEventView> {
                   SizedBox(width: 8),
                   Text(
                     'Create Event',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
