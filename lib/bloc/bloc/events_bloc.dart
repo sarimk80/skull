@@ -3,28 +3,49 @@ import 'package:meta/meta.dart';
 import 'package:skool_app/models/events/event_model.dart';
 import 'package:equatable/equatable.dart';
 import 'package:skool_app/providers/events/event_provider.dart';
+import 'package:stream_transform/stream_transform.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 
 part 'events_event.dart';
 part 'events_state.dart';
 
+const throttleDuration = Duration(milliseconds: 100);
+
+EventTransformer<E> throttleDroppable<E>(Duration duration) {
+  return (events, mapper) {
+    return droppable<E>().call(events.throttle(duration), mapper);
+  };
+}
+
 class EventsBloc extends Bloc<EventsEvent, EventsState> {
   final EventProvider eventProvider;
-  EventsBloc({required this.eventProvider}) : super(EventsState()) {
+  EventsBloc({required this.eventProvider})
+    : super(EventsState(eventsStatus: EventsStatus.initial)) {
     on<FetchEvents>(_onFetchEvent);
     on<FetchEventsDetail>(_onFetchEventDetail);
     on<AddEvent>(_onAddEvent);
+    on<DeleteEvent>(_onDeleteEvent);
   }
 
   Future<void> _onFetchEvent(
     FetchEvents event,
     Emitter<EventsState> emit,
   ) async {
-    emit(state.copyWith(eventsStatus: EventsStatus.loading));
+    if (state.hasReachedMax) return;
+
     try {
-      List<EventsModel> eventModels = await eventProvider.getAllEvents();
+      List<EventsModel> eventModels = await eventProvider.getAllEvents(
+        event.page,
+        event.limit,
+      );
+
+      if (eventModels.isEmpty) {
+        return emit(state.copyWith(hasReachedMax: true));
+      }
+
       emit(
         state.copyWith(
-          eventModelsList: eventModels,
+          eventModelsList: [...state.eventModelsList ?? [], ...eventModels],
           eventsStatus: EventsStatus.success,
         ),
       );
@@ -82,6 +103,30 @@ class EventsBloc extends Bloc<EventsEvent, EventsState> {
         state.copyWith(
           errorMessage: e.toString(),
           eventsStatus: EventsStatus.addError,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onDeleteEvent(
+    DeleteEvent event,
+    Emitter<EventsState> emit,
+  ) async {
+    emit(state.copyWith(eventsStatus: EventsStatus.deleteLoading));
+    try {
+      await eventProvider.deleteEvent(event.id);
+
+      emit(
+        state.copyWith(
+          eventModelsList: state.eventModelsList,
+          eventsStatus: EventsStatus.deleteLoaded,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          errorMessage: e.toString(),
+          eventsStatus: EventsStatus.deleteError,
         ),
       );
     }

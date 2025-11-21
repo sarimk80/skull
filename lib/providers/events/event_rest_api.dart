@@ -10,7 +10,10 @@ abstract class EventRestApi {
   factory EventRestApi(Dio dio, {String baseUrl}) = _EventRestApi;
 
   @GET('/events')
-  Future<List<EventsModel>> getAllEvents();
+  Future<List<EventsModel>> getAllEvents(
+    @Query('page') int page,
+    @Query('limit') int limit
+  );
 
   @POST('/events')
   Future<EventsModel> createEvent(@Body() EventsModel eventModel);

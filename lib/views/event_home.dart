@@ -16,16 +16,45 @@ class EventHome extends StatefulWidget {
 
 class _EventHomeState extends State<EventHome> {
   late EventsBloc eventbloc;
+  final _scrollController = ScrollController();
+  int _currentPage = 1;
+  final int _limit = 15;
 
   @override
   void initState() {
     eventbloc = RepositoryProvider.of<EventsBloc>(context);
-    eventbloc.add(FetchEvents());
+    _loadInitialEvents();
+    _scrollController.addListener(_onScroll);
     super.initState();
   }
 
+  void _loadInitialEvents() {
+    _currentPage = 1;
+    eventbloc.add(FetchEvents(page: _currentPage, limit: _limit));
+  }
+
+  void _onScroll() {
+    if (_isBottom) {
+      _loadMoreEvents();
+    }
+  }
+
+  void _loadMoreEvents() {
+    if (!eventbloc.state.hasReachedMax) {
+      _currentPage++;
+      eventbloc.add(FetchEvents(page: _currentPage, limit: _limit));
+    }
+  }
+
+  bool get _isBottom {
+    if (!_scrollController.hasClients) return false;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.offset;
+    return currentScroll >= (maxScroll * 0.9);
+  }
+
   void _refreshEvents() {
-    eventbloc.add(FetchEvents());
+    //eventbloc.add(FetchEvents(page: 1, limit: 15));
   }
 
   void _logout() {
@@ -206,7 +235,8 @@ class _EventHomeState extends State<EventHome> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: BlocBuilder<EventsBloc, EventsState>(
           builder: (context, state) {
-            if (state.eventsStatus == EventsStatus.loading) {
+            if (state.eventsStatus == EventsStatus.loading ||
+                state.eventsStatus == EventsStatus.initial) {
               return _buildLoadingState();
             }
             if (state.eventsStatus == EventsStatus.success ||
@@ -215,7 +245,7 @@ class _EventHomeState extends State<EventHome> {
               if (state.eventModelsList!.isEmpty) {
                 return _buildEmptyState();
               }
-              return _buildEventList(state.eventModelsList ?? []);
+              return _buildEventList(state);
             }
 
             if (state.eventsStatus == EventsStatus.failure) {
@@ -245,19 +275,58 @@ class _EventHomeState extends State<EventHome> {
     );
   }
 
-  Widget _buildEventList(List<EventsModel> model) {
+  Widget _buildEventList(EventsState state) {
+    final events = state.eventModelsList ?? [];
+    final isLoadingMore =
+        state.eventsStatus == EventsStatus.loading && events.isNotEmpty;
+    final hasReachedMax = state.hasReachedMax;
     return RefreshIndicator(
       onRefresh: () async {
         _refreshEvents();
       },
       child: ListView.separated(
+        controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: model.length,
+        itemCount:
+            events.length + (isLoadingMore ? 1 : 0) + (hasReachedMax ? 1 : 0),
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          final event = model[index];
+          if (index >= events.length) {
+            if (isLoadingMore) {
+              return _buildLoadingMoreIndicator();
+            } else if (hasReachedMax) {
+              return _buildEndOfListIndicator();
+            }
+          }
+
+          final event = events[index];
           return _buildEventCard(event);
         },
+      ),
+    );
+  }
+
+  Widget _buildLoadingMoreIndicator() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEndOfListIndicator() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: Text(
+          'No more events to load',
+          style: TextStyle(fontSize: 14, color: Colors.grey),
+        ),
       ),
     );
   }

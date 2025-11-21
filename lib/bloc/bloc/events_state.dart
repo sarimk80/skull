@@ -10,7 +10,10 @@ enum EventsStatus {
   detailError,
   addLoading,
   addLoaded,
-  addError
+  addError,
+  deleteLoading,
+  deleteLoaded,
+  deleteError
 }
 
 final class EventsState extends Equatable {
@@ -18,12 +21,14 @@ final class EventsState extends Equatable {
   final EventsModel? eventModel;
   final String? errorMessage;
   final EventsStatus? eventsStatus;
+  final bool hasReachedMax;
 
   EventsState({
     this.eventsStatus = EventsStatus.initial,
     this.eventModelsList = const <EventsModel>[],
     this.errorMessage = '',
     this.eventModel,
+    this.hasReachedMax = false
   });
 
   EventsState copyWith({
@@ -31,12 +36,14 @@ final class EventsState extends Equatable {
     EventsModel? eventModel,
     String? errorMessage,
     EventsStatus? eventsStatus,
+    bool? hasReachedMax,
   }) {
     return EventsState(
       eventModelsList: eventModelsList ?? this.eventModelsList,
       eventModel: eventModel ?? this.eventModel,
       errorMessage: errorMessage ?? this.errorMessage,
       eventsStatus: eventsStatus ?? this.eventsStatus,
+      hasReachedMax: hasReachedMax ?? this.hasReachedMax,
     );
   }
 
@@ -47,5 +54,6 @@ final class EventsState extends Equatable {
     eventModel,
     eventsStatus,
     errorMessage,
+    hasReachedMax
   ];
 }
