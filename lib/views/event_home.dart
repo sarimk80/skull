@@ -241,7 +241,8 @@ class _EventHomeState extends State<EventHome> {
             }
             if (state.eventsStatus == EventsStatus.success ||
                 state.eventsStatus == EventsStatus.detailLoaded ||
-                state.eventsStatus == EventsStatus.addLoaded) {
+                state.eventsStatus == EventsStatus.addLoaded ||
+                state.eventsStatus == EventsStatus.deleteLoaded) {
               if (state.eventModelsList!.isEmpty) {
                 return _buildEmptyState();
               }

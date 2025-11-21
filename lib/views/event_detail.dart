@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skool_app/bloc/bloc/events_bloc.dart';
-import 'package:skool_app/bloc/event_cubit/event_cubit_cubit.dart';
 import 'package:skool_app/models/events/event_model.dart';
 
 class EventDetail extends StatefulWidget {
@@ -27,39 +26,98 @@ class _EventDetailState extends State<EventDetail> {
     eventbloc.add(FetchEventsDetail(id: widget.id));
   }
 
+  void _deleteEvent(EventsModel event) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Event'),
+        content: const Text('Are you sure you want to delete this event? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              eventbloc.add(DeleteEvent(id: event.id ?? ''));
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _shareEvent(EventsModel event) {
+    // Implement share functionality
+    final shareText = 'Check out this event: ${event.name}\n\n${event.description}';
+    // You can use share_plus package for actual sharing
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: BlocBuilder<EventsBloc, EventsState>(
-        builder: (context, state) {
-          if (state.eventsStatus == EventsStatus.detailLoading) {
-            return _buildLoadingState();
-          }
-          if (state.eventsStatus == EventsStatus.detailLoaded) {
-            return _buildEventDetail(
-              state.eventModel ??
-                  EventsModel(
-                    createdAt: '',
-                    name: '',
-                    avatar: '',
-                    description: '',
-                    id: '',
-                  ),
-            );
-          }
-          if (state.eventsStatus == EventsStatus.detailError) {
-            return _buildErrorState(state.errorMessage ?? '');
-          }
+    return BlocListener<EventsBloc, EventsState>(
+      listener: (context, state) {
+        if (state.eventsStatus == EventsStatus.deleteLoaded) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Event deleted successfully'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+          Navigator.pop(context);
+        }
+        
+        if (state.eventsStatus == EventsStatus.deleteError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage ?? 'Failed to delete event'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        body: BlocBuilder<EventsBloc, EventsState>(
+          builder: (context, state) {
+            if (state.eventsStatus == EventsStatus.detailLoading) {
+              return _buildLoadingState();
+            }
+            
+            if (state.eventsStatus == EventsStatus.detailLoaded) {
+              return _buildEventDetail(state.eventModel!);
+            }
+            
+            if (state.eventsStatus == EventsStatus.detailError) {
+              return _buildErrorState(state.errorMessage ?? '');
+            }
 
-          return _buildInitialState();
-        },
+            return _buildInitialState();
+          },
+        ),
       ),
     );
   }
 
   Widget _buildLoadingState() {
-    return const Scaffold(
-      body: Center(
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -75,9 +133,7 @@ class _EventDetailState extends State<EventDetail> {
     );
   }
 
-  Widget _buildEventDetail(EventsModel state) {
-    final event = state;
-
+  Widget _buildEventDetail(EventsModel event) {
     return CustomScrollView(
       slivers: [
         SliverAppBar(
@@ -98,19 +154,19 @@ class _EventDetailState extends State<EventDetail> {
             ),
             onPressed: () => Navigator.pop(context),
           ),
-          // actions: [
-          //   IconButton(
-          //     icon: Container(
-          //       padding: const EdgeInsets.all(8),
-          //       decoration: BoxDecoration(
-          //         color: Colors.black.withOpacity(0.5),
-          //         shape: BoxShape.circle,
-          //       ),
-          //       child: const Icon(Icons.share_rounded, color: Colors.white),
-          //     ),
-          //     onPressed: () => _shareEvent(event),
-          //   ),
-          // ],
+          actions: [
+            // IconButton(
+            //   icon: Container(
+            //     padding: const EdgeInsets.all(8),
+            //     decoration: BoxDecoration(
+            //       color: Colors.black.withOpacity(0.5),
+            //       shape: BoxShape.circle,
+            //     ),
+            //     child: const Icon(Icons.share_rounded, color: Colors.white),
+            //   ),
+            //   onPressed: () => _shareEvent(event),
+            // ),
+          ],
         ),
 
         SliverToBoxAdapter(
@@ -143,12 +199,11 @@ class _EventDetailState extends State<EventDetail> {
                 ],
 
                 // Additional Event Details
-               // _buildEventDetails(event),
-
+                //_buildEventDetails(event),
                 const SizedBox(height: 32),
 
                 // Action Buttons
-                //_buildActionButtons(event),
+                _buildActionButtons(event),
 
                 const SizedBox(height: 40),
               ],
@@ -169,26 +224,28 @@ class _EventDetailState extends State<EventDetail> {
                 if (loadingProgress == null) return child;
                 return Container(
                   color: Colors.grey[200],
-                  child: const Center(child: CupertinoActivityIndicator()),
+                  child: const Center(
+                    child: CupertinoActivityIndicator(),
+                  ),
                 );
               },
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  child: const Icon(
+                  child: Icon(
                     Icons.event_rounded,
                     size: 80,
-                    color: Colors.grey,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 );
               },
             )
           : Container(
               color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              child: const Icon(
+              child: Icon(
                 Icons.event_rounded,
                 size: 80,
-                color: Colors.grey,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
       title: Container(
@@ -213,46 +270,51 @@ class _EventDetailState extends State<EventDetail> {
   }
 
   Widget _buildEventDateTime(EventsModel event) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            shape: BoxShape.circle,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.calendar_today_rounded,
+              color: Theme.of(context).colorScheme.primary,
+              size: 20,
+            ),
           ),
-          child: Icon(
-            Icons.calendar_today_rounded,
-            color: Theme.of(context).colorScheme.primary,
-            size: 20,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _formatEventDate(event.createdAt),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _formatEventDate(event.createdAt),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _formatEventTime(event.createdAt),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
+                const SizedBox(height: 4),
+                Text(
+                  _formatEventTime(event.createdAt),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -262,15 +324,25 @@ class _EventDetailState extends State<EventDetail> {
       children: [
         const Text(
           'About this Event',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 12),
-        Text(
-          event.description!,
-          style: TextStyle(
-            fontSize: 16,
-            height: 1.6,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            event.description!,
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.6,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+            ),
           ),
         ),
       ],
@@ -290,25 +362,28 @@ class _EventDetailState extends State<EventDetail> {
         children: [
           const Text(
             'Event Details',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           _buildDetailRow(
             Icons.location_on_rounded,
             'Location',
-            'Main Auditorium', // You might want to add location to your model
+            'Main Auditorium',
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           _buildDetailRow(
             Icons.group_rounded,
             'Capacity',
-            '200 Participants', // You might want to add capacity to your model
+            '200 Participants',
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           _buildDetailRow(
             Icons.category_rounded,
             'Category',
-            'Workshop', // You might want to add category to your model
+            'Workshop',
           ),
         ],
       ),
@@ -318,7 +393,11 @@ class _EventDetailState extends State<EventDetail> {
   Widget _buildDetailRow(IconData icon, String title, String value) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
+        Icon(
+          icon,
+          size: 20,
+          color: Theme.of(context).colorScheme.primary,
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -328,11 +407,10 @@ class _EventDetailState extends State<EventDetail> {
                 title,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
+              const SizedBox(height: 2),
               Text(
                 value,
                 style: const TextStyle(
@@ -348,57 +426,74 @@ class _EventDetailState extends State<EventDetail> {
   }
 
   Widget _buildActionButtons(EventsModel event) {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: () {
-              // Add to calendar functionality
-              _addToCalendar(event);
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.primary,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+    return BlocBuilder<EventsBloc, EventsState>(
+      builder: (context, state) {
+        final isDeleting = state.eventsStatus == EventsStatus.deleteLoading;
+        
+        return Row(
+          children: [
+            // Edit Button
+            // Expanded(
+            //   child: OutlinedButton(
+            //     onPressed: () {
+            //       // Navigate to edit screen
+            //     },
+            //     style: OutlinedButton.styleFrom(
+            //       foregroundColor: Theme.of(context).colorScheme.primary,
+            //       padding: const EdgeInsets.symmetric(vertical: 16),
+            //       shape: RoundedRectangleBorder(
+            //         borderRadius: BorderRadius.circular(12),
+            //       ),
+            //       side: BorderSide(
+            //         color: Theme.of(context).colorScheme.primary,
+            //       ),
+            //     ),
+            //     child: const Row(
+            //       mainAxisAlignment: MainAxisAlignment.center,
+            //       children: [
+            //         Icon(Icons.edit_rounded, size: 20),
+            //         SizedBox(width: 8),
+            //         Text('Edit Event'),
+            //       ],
+            //     ),
+            //   ),
+            // ),
+            const SizedBox(width: 12),
+            
+            // Delete Button
+            Expanded(
+              child: FilledButton(
+                onPressed: isDeleting ? null : () => _deleteEvent(event),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: isDeleting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.delete_forever, size: 20),
+                          SizedBox(width: 8),
+                          Text('Delete'),
+                        ],
+                      ),
               ),
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.calendar_month_outlined),
-                SizedBox(width: 8),
-                Text('Add to Calendar'),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: FilledButton(
-            onPressed: () {
-              // Register for event functionality
-              _registerForEvent(event);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.event_available_rounded),
-                SizedBox(width: 8),
-                Text('Register Now'),
-              ],
-            ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 
@@ -432,14 +527,15 @@ class _EventDetailState extends State<EventDetail> {
                 ),
               ),
               const SizedBox(height: 12),
-              Text(
-                errorMessage,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  errorMessage,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -455,8 +551,14 @@ class _EventDetailState extends State<EventDetail> {
   }
 
   Widget _buildInitialState() {
-    return const Scaffold(
-      body: Center(
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -492,37 +594,15 @@ class _EventDetailState extends State<EventDetail> {
   }
 
   String _getWeekday(DateTime date) {
-    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     return weekdays[date.weekday - 1];
   }
 
   String _getMonth(DateTime date) {
     const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
     ];
     return months[date.month - 1];
-  }
-
-  void _shareEvent(EventsModel event) {
-    // Implement share functionality
-  }
-
-  void _addToCalendar(EventsModel event) {
-    // Implement add to calendar functionality
-  }
-
-  void _registerForEvent(EventsModel event) {
-    // Implement event registration functionality
   }
 }
