@@ -4,6 +4,12 @@ Skool App is a modern Flutter-based event management application that enables us
 
 ---
 
+
+
+https://github.com/user-attachments/assets/5fbd42ca-2375-43cd-bf53-5ccb1f431c63
+
+
+
 ## 🚀 Features
 
 ### 🔐 Authentication
